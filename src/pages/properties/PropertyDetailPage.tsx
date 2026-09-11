@@ -165,11 +165,10 @@ export const PropertyDetailPage: React.FC = () => {
             </div>
 
             {/* Barra de Ações */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
                 size="md"
                 variant="outline"
-                fullWidthMobile
                 leftIcon={<Edit className="w-4 h-4" />}
                 onClick={() => setIsEditOpen(true)}
                 className="font-bold text-xs"
@@ -177,42 +176,64 @@ export const PropertyDetailPage: React.FC = () => {
                 Editar imóvel
               </Button>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1 text-sm font-semibold cursor-pointer"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
-
-              {showMoreMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150">
-                  <button
-                    onClick={() => handleUpdateStatus('AVAILABLE')}
-                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
-                  >
-                    Marcar como disponível
-                  </button>
-                  <button
-                    onClick={() => handleUpdateStatus('INACTIVE')}
-                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
-                  >
-                    Marcar como inativo
-                  </button>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      toast.info('Exibindo histórico de locatários abaixo.');
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
-                  >
-                    Ver histórico
-                  </button>
-                </div>
+              {property.status === 'AVAILABLE' && (
+                <Button
+                  size="md"
+                  variant="outline"
+                  onClick={() => handleUpdateStatus('INACTIVE')}
+                  className="font-bold text-xs text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                >
+                  Inativar imóvel
+                </Button>
               )}
+
+              {property.status === 'INACTIVE' && (
+                <Button
+                  size="md"
+                  variant="primary"
+                  onClick={() => handleUpdateStatus('AVAILABLE')}
+                  className="font-bold text-xs"
+                >
+                  Ativar imóvel
+                </Button>
+              )}
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1 text-sm font-semibold cursor-pointer"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {showMoreMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      onClick={() => handleUpdateStatus('AVAILABLE')}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                    >
+                      Marcar como disponível
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus('INACTIVE')}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                    >
+                      Marcar como inativo
+                    </button>
+                    <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                    <button
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        toast.info('Exibindo histórico de locatários abaixo.');
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                    >
+                      Ver histórico
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
         </div>
       </div>
 

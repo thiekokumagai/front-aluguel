@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { PageContainer } from '../../components/layout/PageContainer';
 import { StatusFilter } from '../../components/ui/StatusFilter';
 import {
@@ -199,9 +200,12 @@ export const PropertiesListPage: React.FC = () => {
                 className="p-4 sm:px-6 sm:py-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
               >
                 {/* Nome e Endereço */}
-                <div className="space-y-1.5">
+                <div
+                  className="space-y-1.5 cursor-pointer flex-1"
+                  onClick={() => navigate(`/imoveis/${p.id}`)}
+                >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-normal">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-normal hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       {p.name}
                     </h3>
                     {p.status === 'RENTED' && (
@@ -233,18 +237,28 @@ export const PropertiesListPage: React.FC = () => {
                 </div>
 
                 {/* Ações */}
-                <div>
+                <div className="flex items-center gap-2 shrink-0">
                   {p.status === 'AVAILABLE' ? (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      leftIcon={<KeyRound className="w-4 h-4" />}
-                      onClick={openNewRentalModal}
-                      className="font-bold text-xs shadow-xs"
-                      fullWidthMobile
-                    >
-                      Iniciar aluguel
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        leftIcon={<KeyRound className="w-4 h-4" />}
+                        onClick={openNewRentalModal}
+                        className="font-bold text-xs shadow-xs"
+                      >
+                        Iniciar aluguel
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        rightIcon={<ChevronRight className="w-4 h-4" />}
+                        onClick={() => navigate(`/imoveis/${p.id}`)}
+                        className="font-semibold text-xs"
+                      >
+                        Ver imóvel
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       size="sm"
@@ -279,22 +293,18 @@ export const PropertiesListPage: React.FC = () => {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Tipo
-              </label>
-              <select
-                value={newPropType}
-                onChange={(e) => setNewPropType(e.target.value as Property['type'])}
-                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
-              >
-                <option value="Casa">Casa</option>
-                <option value="Apartamento">Apartamento</option>
-                <option value="Sala comercial">Sala comercial</option>
-                <option value="Terreno">Terreno</option>
-                <option value="Outro">Outro</option>
-              </select>
-            </div>
+            <Select
+              label="Tipo"
+              value={newPropType}
+              onChange={(e) => setNewPropType(e.target.value as Property['type'])}
+              options={[
+                { label: 'Casa', value: 'Casa' },
+                { label: 'Apartamento', value: 'Apartamento' },
+                { label: 'Sala comercial', value: 'Sala comercial' },
+                { label: 'Terreno', value: 'Terreno' },
+                { label: 'Outro', value: 'Outro' },
+              ]}
+            />
             <Input
               label="Valor padrão do aluguel (R$)"
               type="number"
