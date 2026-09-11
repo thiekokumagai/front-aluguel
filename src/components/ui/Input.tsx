@@ -3,20 +3,22 @@ import { clsx } from 'clsx';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  labelClassName?: string;
   error?: string;
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  onRightIconClick?: () => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, leftIcon, rightIcon, className, id, ...props }, ref) => {
+  ({ label, labelClassName, error, helperText, leftIcon, rightIcon, onRightIconClick, className, id, ...props }, ref) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor={inputId} className={clsx("block text-sm font-medium", labelClassName || "text-slate-700 dark:text-slate-300")}>
             {label}
           </label>
         )}
@@ -30,7 +32,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             className={clsx(
-              'block w-full rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500',
+              'block w-full rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-500',
+              !className?.includes('bg-') && 'bg-white dark:bg-slate-900',
+              !className?.includes('text-') && 'text-slate-900 dark:text-slate-100',
               leftIcon ? 'pl-9' : 'pl-3.5',
               rightIcon ? 'pr-9' : 'pr-3.5',
               'py-2.5',
@@ -42,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+            <div className={clsx("absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400", onRightIconClick ? "cursor-pointer hover:text-slate-200" : "pointer-events-none")} onClick={onRightIconClick}>
               {rightIcon}
             </div>
           )}

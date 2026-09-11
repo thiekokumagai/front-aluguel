@@ -701,7 +701,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
             {/* ==================== PASSO 3: ALUGUEL ==================== */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Valor do aluguel *"
                     type="number"
@@ -727,7 +727,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Início do aluguel *"
                     type="date"
@@ -786,7 +786,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
                   {showAdvancedRent && (
                     <div className="p-4 space-y-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 animate-in fade-in">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             Reajuste anual
@@ -811,7 +811,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                         />
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Input
                           label="Multa (%)"
                           type="number"
@@ -819,7 +819,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                           onChange={(e) => setFinePercent(Number(e.target.value))}
                         />
                         <Input
-                          label="Juros ao mês (%)"
+                          label="Juros/mês (%)"
                           type="number"
                           value={interestPercentMonth}
                           onChange={(e) => setInterestPercentMonth(Number(e.target.value))}
