@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 import { propertyService } from '../../services/propertyService';
 import { tenantService } from '../../services/tenantService';
 import { contractService } from '../../services/contractService';
@@ -485,25 +486,20 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
                 {propertyMode === 'SELECT' ? (
                   <div className="space-y-2 pt-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Selecione o imóvel *
-                    </label>
                     {properties.length === 0 ? (
                       <p className="text-sm text-slate-500 py-4 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border">
                         Nenhum imóvel disponível. Escolha &quot;Cadastrar novo&quot;.
                       </p>
                     ) : (
-                      <select
+                      <Select
+                        label="Selecione o imóvel *"
                         value={selectedPropertyId}
                         onChange={(e) => setSelectedPropertyId(e.target.value)}
-                        className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        {properties.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} - {p.address.neighborhood || p.address.city} (R$ {p.defaultRentValue.toLocaleString('pt-BR')})
-                          </option>
-                        ))}
-                      </select>
+                        options={properties.map((p) => ({
+                          label: `${p.name} - ${p.address.neighborhood || p.address.city} (R$ ${p.defaultRentValue.toLocaleString('pt-BR')})`,
+                          value: p.id,
+                        }))}
+                      />
                     )}
                   </div>
                 ) : (
@@ -514,29 +510,25 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                       value={newProperty.name}
                       onChange={(e) => setNewProperty({ ...newProperty, name: e.target.value })}
                     />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 items-end">
                       <Input
                         label="CEP"
                         placeholder="00000-000"
                         value={newProperty.zipCode}
                         onChange={(e) => setNewProperty({ ...newProperty, zipCode: e.target.value })}
                       />
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                          Tipo
-                        </label>
-                        <select
-                          value={newProperty.type}
-                          onChange={(e) => setNewProperty({ ...newProperty, type: e.target.value as Property['type'] })}
-                          className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
-                        >
-                          <option value="Casa">Casa</option>
-                          <option value="Apartamento">Apartamento</option>
-                          <option value="Sala comercial">Sala comercial</option>
-                          <option value="Terreno">Terreno</option>
-                          <option value="Outro">Outro</option>
-                        </select>
-                      </div>
+                      <Select
+                        label="Tipo"
+                        value={newProperty.type}
+                        onChange={(e) => setNewProperty({ ...newProperty, type: e.target.value as Property['type'] })}
+                        options={[
+                          { label: 'Casa', value: 'Casa' },
+                          { label: 'Apartamento', value: 'Apartamento' },
+                          { label: 'Sala comercial', value: 'Sala comercial' },
+                          { label: 'Terreno', value: 'Terreno' },
+                          { label: 'Outro', value: 'Outro' },
+                        ]}
+                      />
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="col-span-2">
@@ -611,25 +603,20 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
                 {tenantMode === 'SELECT' ? (
                   <div className="space-y-2 pt-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Selecione o cliente *
-                    </label>
                     {tenants.length === 0 ? (
                       <p className="text-sm text-slate-500 py-4 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border">
                         Nenhum cliente cadastrado. Escolha &quot;Cadastrar novo&quot;.
                       </p>
                     ) : (
-                      <select
+                      <Select
+                        label="Selecione o cliente *"
                         value={selectedTenantId}
                         onChange={(e) => setSelectedTenantId(e.target.value)}
-                        className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500"
-                      >
-                        {tenants.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} ({t.whatsapp || t.phone})
-                          </option>
-                        ))}
-                      </select>
+                        options={tenants.map((t) => ({
+                          label: `${t.name} (${t.whatsapp || t.phone})`,
+                          value: t.id,
+                        }))}
+                      />
                     )}
                   </div>
                 ) : (
@@ -701,7 +688,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
             {/* ==================== PASSO 3: ALUGUEL ==================== */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                   <Input
                     label="Valor do aluguel *"
                     type="number"
@@ -709,25 +696,18 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                     value={rentValue}
                     onChange={(e) => setRentValue(e.target.value === '' ? '' : Number(e.target.value))}
                   />
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Vencimento todo dia *
-                    </label>
-                    <select
-                      value={dueDay}
-                      onChange={(e) => setDueDay(Number(e.target.value))}
-                      className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
-                    >
-                      {[1, 5, 8, 10, 15, 20, 25, 28, 30].map((day) => (
-                        <option key={day} value={day}>
-                          Dia {day}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    label="Vencimento todo dia *"
+                    value={dueDay}
+                    onChange={(e) => setDueDay(Number(e.target.value))}
+                    options={[1, 5, 8, 10, 15, 20, 25, 28, 30].map((day) => ({
+                      label: `Dia ${day}`,
+                      value: day,
+                    }))}
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                   <Input
                     label="Início do aluguel *"
                     type="date"
@@ -739,7 +719,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Tem data para terminar?
                     </label>
-                    <div className="flex gap-4 pt-2">
+                    <div className="flex gap-4 py-2.5">
                       <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                         <input
                           type="radio"
@@ -786,22 +766,18 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
                   {showAdvancedRent && (
                     <div className="p-4 space-y-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 animate-in fade-in">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Reajuste anual
-                          </label>
-                          <select
-                            value={readjustmentType}
-                            onChange={(e) => setReadjustmentType(e.target.value as ReadjustmentType)}
-                            className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
-                          >
-                            <option value="IPCA">IPCA</option>
-                            <option value="IGP-M">IGP-M</option>
-                            <option value="Manual">Manual</option>
-                            <option value="Sem reajuste">Sem reajuste</option>
-                          </select>
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                        <Select
+                          label="Reajuste anual"
+                          value={readjustmentType}
+                          onChange={(e) => setReadjustmentType(e.target.value as ReadjustmentType)}
+                          options={[
+                            { label: 'IPCA', value: 'IPCA' },
+                            { label: 'IGP-M', value: 'IGP-M' },
+                            { label: 'Manual', value: 'Manual' },
+                            { label: 'Sem reajuste', value: 'Sem reajuste' },
+                          ]}
+                        />
                         <Input
                           label="Caução (R$)"
                           type="number"

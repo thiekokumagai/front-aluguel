@@ -292,7 +292,7 @@ export const PropertiesListPage: React.FC = () => {
             onChange={(e) => setNewPropName(e.target.value)}
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-end">
             <Select
               label="Tipo"
               value={newPropType}
@@ -306,7 +306,7 @@ export const PropertiesListPage: React.FC = () => {
               ]}
             />
             <Input
-              label="Valor padrão do aluguel (R$)"
+              label="Valor do aluguel (R$)"
               type="number"
               value={newPropRent}
               onChange={(e) => setNewPropRent(e.target.value === '' ? '' : Number(e.target.value))}
