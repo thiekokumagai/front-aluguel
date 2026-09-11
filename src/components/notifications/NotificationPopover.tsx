@@ -100,7 +100,7 @@ export const NotificationPopover: React.FC = () => {
                     </p>
                     {item.linkUrl && (
                       <Link
-                        to={item.linkUrl}
+                        to={item.linkUrl.replace('/cobrancas/', '/alugueis/').replace('/contratos/', '/alugueis/')}
                         onClick={() => {
                           markAsRead(item.id);
                           setIsOpen(false);

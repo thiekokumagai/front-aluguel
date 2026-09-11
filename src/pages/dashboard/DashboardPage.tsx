@@ -1,66 +1,50 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { dashboardService } from '../../services/dashboardService';
 import { chargeService } from '../../services/chargeService';
 import type { DashboardMetrics, Charge } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { StatCard } from '../../components/common/StatCard';
-import { ChargeStatusBadge } from '../../components/common/ChargeStatusBadge';
+import { PageContainer } from '../../components/layout/PageContainer';
+import { StatusFilter, type FilterOption } from '../../components/ui/StatusFilter';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import {
-  DollarSign,
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Building2,
-  FileText,
-  MessageCircle,
-  TrendingUp,
+  Plus,
+  MessageSquare,
+  ShieldCheck,
+  ChevronRight,
+  Send,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
+type FilterTab = 'ALL' | 'PENDING' | 'PAID' | 'OVERDUE';
 
 export const DashboardPage: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [upcomingCharges, setUpcomingCharges] = useState<Charge[]>([]);
-  const [overdueCharges, setOverdueCharges] = useState<Charge[]>([]);
+  const [charges, setCharges] = useState<Charge[]>([]);
+  const [filter, setFilter] = useState<FilterTab>('ALL');
   const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
+  const { openNewRentalModal, openExtraChargeModal } = useOutletContext<{
+    openNewRentalModal: () => void;
+    openExtraChargeModal: () => void;
+  }>() || { openNewRentalModal: () => {}, openExtraChargeModal: () => {} };
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const m = await dashboardService.getMetrics();
-      const cData = await dashboardService.getRevenueChartData();
-      const allCharges = await chargeService.getAll();
-
+      const [m, allCharges] = await Promise.all([
+        dashboardService.getMetrics(),
+        chargeService.getAll(),
+      ]);
       setMetrics(m);
-      setChartData(cData);
-
-      const upcoming = allCharges
-        .filter((c) => c.status === 'PENDING')
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-        .slice(0, 5);
-      setUpcomingCharges(upcoming);
-
-      const overdue = allCharges
-        .filter((c) => c.status === 'OVERDUE')
-        .sort((a, b) => b.daysOverdue - a.daysOverdue);
-      setOverdueCharges(overdue);
+      setCharges(allCharges);
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao carregar dados do dashboard');
+      toast.error('Erro ao carregar os aluguéis.');
     } finally {
       setIsLoading(false);
     }
@@ -68,345 +52,280 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    const handleRentalCreated = () => loadData();
+    window.addEventListener('rental-created', handleRentalCreated);
+    return () => window.removeEventListener('rental-created', handleRentalCreated);
   }, []);
 
-  const handleChargeWhatsApp = async (chargeId: string, tenantName: string) => {
+  const handleSendReminder = async (chargeId: string, tenantName: string) => {
     try {
       const res = await chargeService.sendWhatsAppReminder(chargeId);
       toast.success(res.message);
       loadData();
     } catch (err) {
-      toast.error(`Falha ao enviar cobrança para ${tenantName}`);
+      toast.error(`Falha ao enviar lembrete para ${tenantName}`);
     }
   };
 
+  const filteredCharges = charges.filter((c) => {
+    if (filter === 'PAID') return c.status === 'PAID';
+    if (filter === 'PENDING') return c.status === 'PENDING';
+    if (filter === 'OVERDUE') return c.status === 'OVERDUE';
+    return true;
+  });
+
+  const filterOptions: FilterOption<FilterTab>[] = [
+    { id: 'ALL', label: 'Todos', count: charges.length },
+    { id: 'PENDING', label: 'A receber', count: metrics?.dueCount, variant: 'info' },
+    { id: 'PAID', label: 'Pagos', count: metrics?.paidCount, variant: 'success' },
+    { id: 'OVERDUE', label: 'Atrasados', count: metrics?.overdueCount, variant: 'danger' },
+  ];
+
   if (isLoading || !metrics) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-          ))}
+      <PageContainer>
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/3" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            ))}
+          </div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Quick Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <PageContainer>
+      {/* 2. NOVO CABEÇALHO HUMANIZADO & COMPACTO */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Visão Geral da Carteira
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+            Olá, Eduardo 👋
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Acompanhamento em tempo real de aluguéis, vencimentos e cobranças.
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
+            Veja como estão seus aluguéis este mês.
           </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-2 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>✓ Suas cobranças estão sendo enviadas automaticamente.</span>
+          </div>
         </div>
 
-        {/* Quick Action Bar */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
           <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<Building2 className="w-3.5 h-3.5" />}
-            onClick={() => navigate('/imoveis')}
+            size="lg"
+            variant="primary"
+            leftIcon={<Plus className="w-5 h-5" />}
+            onClick={openNewRentalModal}
+            fullWidthMobile
+            className="font-bold shadow-md shadow-blue-600/20"
           >
-            + Novo imóvel
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<Building2 className="w-3.5 h-3.5" />}
-            onClick={() => navigate('/inquilinos')}
-          >
-            + Novo inquilino
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<FileText className="w-3.5 h-3.5" />}
-            onClick={() => navigate('/contratos')}
-          >
-            + Novo contrato
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            leftIcon={<AlertTriangle className="w-3.5 h-3.5" />}
-            onClick={() => navigate('/cobrancas?status=OVERDUE')}
-          >
-            Ver atrasados ({metrics.overdueCount})
+            + Novo aluguel
           </Button>
         </div>
       </div>
 
-      {/* Main KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          title="Receita Prevista (Mês)"
-          value={formatCurrency(metrics.expectedRevenue)}
-          subtitle="Valor total da carteira em 09/2026"
-          icon={<DollarSign className="w-6 h-6" />}
-          iconBgColor="bg-blue-50 dark:bg-blue-950/50"
-          iconTextColor="text-blue-600 dark:text-blue-400"
-          badgeText="Previsão Mensal"
-          badgeVariant="info"
-        />
+      {/* 3. RESUMO FINANCEIRO (3 CARDS COMPACTOS - MT 20PX, GAP 16PX) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+        {/* CARD 1: RECEBIDO */}
+        <button
+          onClick={() => setFilter(filter === 'PAID' ? 'ALL' : 'PAID')}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group shadow-xs ${
+            filter === 'PAID'
+              ? 'ring-2 ring-emerald-500 bg-emerald-100/60 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700'
+              : 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-900/60 hover:bg-emerald-100/50'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              Recebido
+            </span>
+            <div className="p-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-emerald-950 dark:text-emerald-100 mt-1.5">
+            {formatCurrency(metrics.receivedRevenue)}
+          </p>
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mt-0.5">
+            {metrics.paidCount} aluguéis pagos
+          </p>
+        </button>
 
-        <StatCard
-          title="Recebido no Mês"
-          value={formatCurrency(metrics.receivedRevenue)}
-          subtitle={`${metrics.paidCount} cobranças quitadas`}
-          icon={<CheckCircle2 className="w-6 h-6" />}
-          iconBgColor="bg-emerald-50 dark:bg-emerald-950/50"
-          iconTextColor="text-emerald-600 dark:text-emerald-400"
-          badgeText="Pagamentos Confirmados"
-          badgeVariant="success"
-        />
+        {/* CARD 2: A RECEBER */}
+        <button
+          onClick={() => setFilter(filter === 'PENDING' ? 'ALL' : 'PENDING')}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group shadow-xs ${
+            filter === 'PENDING'
+              ? 'ring-2 ring-blue-500 bg-blue-100/60 dark:bg-blue-950/60 border-blue-300 dark:border-blue-700'
+              : 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100/50'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+              A receber
+            </span>
+            <div className="p-1.5 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-blue-950 dark:text-blue-100 mt-1.5">
+            {formatCurrency(metrics.pendingRevenue)}
+          </p>
+          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mt-0.5">
+            {metrics.dueCount + metrics.dueTodayCount} aluguel aguardando
+          </p>
+        </button>
 
-        <StatCard
-          title="Pendente (A Vencer)"
-          value={formatCurrency(metrics.pendingRevenue)}
-          subtitle={`${metrics.dueCount} cobranças aguardando`}
-          icon={<Clock className="w-6 h-6" />}
-          iconBgColor="bg-amber-50 dark:bg-amber-950/50"
-          iconTextColor="text-amber-600 dark:text-amber-400"
-          badgeText="A Vencer"
-          badgeVariant="warning"
-        />
-
-        <StatCard
-          title="Em Atraso"
-          value={formatCurrency(metrics.overdueRevenue)}
-          subtitle={`${metrics.overdueCount} aluguéis em atraso`}
-          icon={<AlertTriangle className="w-6 h-6" />}
-          iconBgColor="bg-rose-50 dark:bg-rose-950/50"
-          iconTextColor="text-rose-600 dark:text-rose-400"
-          badgeText="Ação Requerida"
-          badgeVariant="danger"
-          onClick={() => navigate('/cobrancas?status=OVERDUE')}
-        />
-
-        <StatCard
-          title="Quantidade de Imóveis"
-          value={`${metrics.totalProperties} imóveis`}
-          subtitle="10 alugados / 1 disponível / 1 inativo"
-          icon={<Building2 className="w-6 h-6" />}
-          iconBgColor="bg-slate-100 dark:bg-slate-800"
-          iconTextColor="text-slate-700 dark:text-slate-300"
-          badgeText="Total Cadastrado"
-          badgeVariant="neutral"
-          onClick={() => navigate('/imoveis')}
-        />
-
-        <StatCard
-          title="Contratos Ativos"
-          value={`${metrics.activeContracts} contratos`}
-          subtitle="2 contratos encerrando nos próximos 30 dias"
-          icon={<FileText className="w-6 h-6" />}
-          iconBgColor="bg-indigo-50 dark:bg-indigo-950/50"
-          iconTextColor="text-indigo-600 dark:text-indigo-400"
-          badgeText="Vigentes"
-          badgeVariant="info"
-          onClick={() => navigate('/contratos')}
-        />
+        {/* CARD 3: ATRASADO */}
+        <button
+          onClick={() => setFilter(filter === 'OVERDUE' ? 'ALL' : 'OVERDUE')}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group shadow-xs ${
+            filter === 'OVERDUE'
+              ? 'ring-2 ring-rose-500 bg-rose-100/60 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700'
+              : 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-900/60 hover:bg-rose-100/50'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+              Atrasado
+            </span>
+            <div className="p-1.5 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-black text-rose-950 dark:text-rose-100 mt-1.5">
+            {formatCurrency(metrics.overdueRevenue)}
+          </p>
+          <p className="text-xs font-semibold text-rose-700 dark:text-rose-400 mt-0.5">
+            {metrics.overdueCount} aluguéis atrasados
+          </p>
+        </button>
       </div>
 
-      {/* Situação dos Aluguéis Breakdown */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" /> Situação dos Aluguéis
-          </h3>
-          <span className="text-xs text-slate-400">Setembro / 2026</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
-            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Pagos</p>
-            <p className="text-xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">{metrics.paidCount}</p>
-          </div>
-          <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">A vencer</p>
-            <p className="text-xl font-bold text-blue-900 dark:text-blue-200 mt-1">{metrics.dueCount}</p>
-          </div>
-          <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60">
-            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Vencendo hoje</p>
-            <p className="text-xl font-bold text-amber-900 dark:text-amber-200 mt-1">{metrics.dueTodayCount}</p>
-          </div>
-          <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60">
-            <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Atrasados</p>
-            <p className="text-xl font-bold text-rose-900 dark:text-rose-200 mt-1">{metrics.overdueCount}</p>
-          </div>
-        </div>
-      </Card>
+      {/* 4. SEÇÃO PRINCIPAL (ALUGUÉIS DESTE MÊS - MARGIN TOP 24PX) */}
+      <div className="mt-6 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100">
+            Aluguéis deste mês
+          </h2>
 
-      {/* Grid Row: Revenue Chart & Overdue List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  Recebimentos dos Últimos 6 Meses
-                </h3>
-                <p className="text-xs text-slate-500">Histórico de receita confirmada em R$</p>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => navigate('/financeiro')}>
-                Ver extrato &rarr;
-              </Button>
-            </div>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    formatter={(val: any) => formatCurrency(Number(val))}
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      color: '#fff',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Bar dataKey="recebido" fill="#2563eb" radius={[4, 4, 0, 0]} name="Recebido" />
-                  <Bar dataKey="pendente" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Pendente" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                <AlertTriangle className="w-5 h-5" /> Aluguéis Atrasados
-              </h3>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
-                {overdueCharges.length}
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {overdueCharges.length === 0 ? (
-                <div className="text-center py-8 text-sm text-slate-500">
-                  Nenhum aluguel em atraso no momento! 🎉
-                </div>
-              ) : (
-                overdueCharges.map((chg) => (
-                  <div
-                    key={chg.id}
-                    className="p-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 space-y-2"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {chg.tenantName}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate max-w-[180px]">
-                          {chg.propertyName}
-                        </p>
-                      </div>
-                      <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
-                        {chg.daysOverdue} dias atraso
-                      </span>
-                    </div>
-
-                    <div className="text-xs space-y-1 text-slate-600 dark:text-slate-300 border-t border-rose-100 dark:border-rose-900/40 pt-1.5">
-                      <div className="flex justify-between">
-                        <span>Valor Original:</span>
-                        <span>{formatCurrency(chg.originalValue)}</span>
-                      </div>
-                      <div className="flex justify-between text-rose-600 dark:text-rose-400 font-medium">
-                        <span>Multa + Juros:</span>
-                        <span>+{formatCurrency(chg.fineValue + chg.interestValue)}</span>
-                      </div>
-                      <div className="flex justify-between font-bold text-slate-900 dark:text-slate-100 pt-1">
-                        <span>Atualizado:</span>
-                        <span>{formatCurrency(chg.updatedValue)}</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      variant="success"
-                      className="w-full text-xs py-1.5 bg-emerald-600 hover:bg-emerald-500"
-                      leftIcon={<MessageCircle className="w-3.5 h-3.5" />}
-                      onClick={() => handleChargeWhatsApp(chg.id, chg.tenantName)}
-                    >
-                      Cobrar via WhatsApp
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Próximos Vencimentos Table */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              Próximos Vencimentos
-            </h3>
-            <p className="text-xs text-slate-500">Cobranças agendadas para os próximos dias</p>
-          </div>
-          <Button size="sm" variant="ghost" onClick={() => navigate('/cobrancas')}>
-            Ver todas cobranças &rarr;
-          </Button>
+          {/* Filtros simples reutilizando StatusFilter */}
+          <StatusFilter options={filterOptions} value={filter} onChange={setFilter} />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="px-4 py-3">Inquilino</th>
-                <th className="px-4 py-3">Imóvel</th>
-                <th className="px-4 py-3">Valor</th>
-                <th className="px-4 py-3">Vencimento</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {upcomingCharges.map((chg) => (
-                <tr key={chg.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+        {/* LISTA DE CARDS DE ALUGUEL (GAP 12PX) */}
+        {filteredCharges.length === 0 ? (
+          <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-3">
+            <p className="text-slate-500 text-sm">Nenhum aluguel encontrado neste filtro.</p>
+            <Button size="sm" variant="outline" onClick={() => setFilter('ALL')}>
+              Ver todos os aluguéis
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3 mt-3">
+            {filteredCharges.map((chg) => (
+              <div
+                key={chg.id}
+                className="p-4 sm:px-6 sm:py-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-xs"
+              >
+                {/* Informações Principais */}
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-normal">
                     {chg.tenantName}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{chg.propertyName}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
-                    {formatCurrency(chg.originalValue)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatDate(chg.dueDate)}</td>
-                  <td className="px-4 py-3">
-                    <ChargeStatusBadge
-                      status={chg.status}
-                      isDueToday={chg.dueDate === new Date().toISOString().split('T')[0]}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/cobrancas/${chg.id}`)}
-                    >
-                      Visualizar
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </div>
+                  </h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {chg.propertyName}
+                  </p>
+                </div>
+
+                {/* Valor + Status + Ação */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-5 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 pt-2.5 sm:pt-0">
+                  <div className="text-left sm:text-right">
+                    <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                      {formatCurrency(chg.updatedValue)}
+                    </p>
+                    <div className="mt-0.5">
+                      {chg.status === 'PAID' && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Pago em {formatDate(chg.paymentDate || chg.dueDate)}
+                        </span>
+                      )}
+
+                      {chg.status === 'PENDING' && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                          <Clock className="w-3.5 h-3.5" /> A receber • Vence dia {formatDate(chg.dueDate).split('/')[0]}
+                        </span>
+                      )}
+
+                      {chg.status === 'OVERDUE' && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                          <AlertTriangle className="w-3.5 h-3.5" /> ⚠️ {chg.daysOverdue} dias atrasado
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Ação Direta */}
+                  <div className="w-full sm:w-auto">
+                    {chg.status === 'OVERDUE' && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
+                        onClick={() => handleSendReminder(chg.id, chg.tenantName)}
+                        fullWidthMobile
+                        className="font-bold text-xs"
+                      >
+                        Enviar lembrete
+                      </Button>
+                    )}
+
+                    {chg.status === 'PENDING' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<MessageSquare className="w-3.5 h-3.5 text-emerald-600" />}
+                        onClick={() => handleSendReminder(chg.id, chg.tenantName)}
+                        fullWidthMobile
+                        className="font-bold text-xs"
+                      >
+                        Enviar cobrança
+                      </Button>
+                    )}
+
+                    {chg.status === 'PAID' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
+                        onClick={() => navigate(`/alugueis/${chg.contractId}`)}
+                        fullWidthMobile
+                        className="text-xs font-semibold text-slate-600 dark:text-slate-400"
+                      >
+                        Ver aluguel
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Atalho discreto para cobrança extra */}
+      <div className="pt-2 text-center">
+        <button
+          onClick={openExtraChargeModal}
+          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5 cursor-pointer py-1 px-2"
+        >
+          <Send className="w-3.5 h-3.5" />
+          <span>Precisa cobrar um valor avulso? Enviar cobrança extra</span>
+        </button>
+      </div>
+    </PageContainer>
   );
 };

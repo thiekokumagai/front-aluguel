@@ -4,13 +4,9 @@ import {
   LayoutDashboard,
   Home,
   Users,
-  FileText,
-  CreditCard,
-  Calendar,
-  DollarSign,
-  BarChart3,
-  Settings,
   Building2,
+  DollarSign,
+  Settings,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
@@ -26,14 +22,11 @@ export const AppSidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Imóveis', path: '/imoveis', icon: Home },
-    { label: 'Inquilinos', path: '/inquilinos', icon: Users },
-    { label: 'Contratos', path: '/contratos', icon: FileText },
-    { label: 'Cobranças', path: '/cobrancas', icon: CreditCard },
-    { label: 'Calendário', path: '/calendario', icon: Calendar },
+    { label: 'Início', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Aluguéis', path: '/alugueis', icon: Home },
+    { label: 'Clientes', path: '/clientes', icon: Users },
+    { label: 'Imóveis', path: '/imoveis', icon: Building2 },
     { label: 'Financeiro', path: '/financeiro', icon: DollarSign },
-    { label: 'Relatórios', path: '/relatorios', icon: BarChart3 },
     { label: 'Configurações', path: '/configuracoes', icon: Settings },
   ];
 
@@ -51,10 +44,8 @@ export const AppSidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose
       <aside
         className={clsx(
           'fixed top-0 bottom-0 left-0 z-40 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 transition-all duration-300 flex flex-col justify-between',
-          // Desktop positioning & width
-          isCollapsed ? 'lg:w-20' : 'lg:w-64',
-          // Mobile positioning
-          isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'
+          isCollapsed ? 'lg:w-20' : 'lg:w-56',
+          isMobileOpen ? 'translate-x-0 w-56' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Header / Logo */}
@@ -67,10 +58,10 @@ export const AppSidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose
               {(!isCollapsed || isMobileOpen) && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-                    Aluguel<span className="text-blue-600 dark:text-blue-400">SaaS</span>
+                    Aluguel<span className="text-blue-600 dark:text-blue-400">Assistente</span>
                   </span>
                   <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                    Gestão de Imóveis
+                    Cobranças Automáticas
                   </span>
                 </div>
               )}
@@ -118,8 +109,8 @@ export const AppSidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex items-center space-x-3">
               <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
               <div className="text-xs min-w-0">
-                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">Plano Pro SaaS</p>
-                <p className="text-slate-400 truncate">12 de 50 imóveis</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">Automação Ativa</p>
+                <p className="text-slate-400 truncate">Cobranças mensais em dia</p>
               </div>
             </div>
           </div>

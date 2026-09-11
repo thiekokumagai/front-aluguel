@@ -910,8 +910,8 @@ export const initialFinancialTransactions: FinancialTransaction[] = [
 ];
 
 export const initialNotifications: AppNotification[] = [
-  { id: 'not-1', title: 'Pagamento Confirmado', message: 'Roberto Santos pagou o aluguel de R$ 3.200,00 referente a 09/2026 via PIX.', timestamp: 'Hoje às 11:30', read: false, type: 'payment', linkUrl: '/cobrancas/chg-103' },
-  { id: 'not-2', title: 'Aluguel Vencendo Hoje', message: 'Aluguel de Mariana Costa no valor de R$ 1.500,00 vence hoje.', timestamp: 'Hoje às 07:00', read: false, type: 'due', linkUrl: '/cobrancas/chg-104' },
+  { id: 'not-1', title: 'Pagamento Confirmado', message: 'Roberto Santos pagou o aluguel de R$ 3.200,00 referente a 09/2026 via PIX.', timestamp: 'Hoje às 11:30', read: false, type: 'payment', linkUrl: '/alugueis/ctr-3' },
+  { id: 'not-2', title: 'Aluguel Vencendo Hoje', message: 'Aluguel de Mariana Costa no valor de R$ 1.500,00 vence hoje.', timestamp: 'Hoje às 07:00', read: false, type: 'due', linkUrl: '/alugueis/ctr-4' },
 ];
 
 export const initialSettings: Settings = {

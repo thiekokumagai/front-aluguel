@@ -1,38 +1,54 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { propertyService } from '../../services/propertyService';
 import type { Property } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
-import { PropertyStatusBadge } from '../../components/common/PropertyStatusBadge';
-import { PageHeader } from '../../components/common/PageHeader';
-import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
-import { SearchInput } from '../../components/common/SearchInput';
-import { EmptyState } from '../../components/common/EmptyState';
-import { Home, KeyRound, Wrench, Plus, Eye } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { propertySchema, type PropertyFormData } from '../../schemas/propertySchema';
-import { useNavigate } from 'react-router-dom';
+import { Input } from '../../components/ui/Input';
+import { PageContainer } from '../../components/layout/PageContainer';
+import { StatusFilter } from '../../components/ui/StatusFilter';
+import {
+  Search,
+  Plus,
+  ChevronRight,
+  KeyRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export const PropertiesListPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [cityFilter, setCityFilter] = useState<string>('ALL');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState<'ALL' | 'RENTED' | 'AVAILABLE' | 'INACTIVE'>('ALL');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // New Property Modal
+  const [isNewPropertyOpen, setIsNewPropertyOpen] = useState(false);
+  const [newPropName, setNewPropName] = useState('');
+  const [newPropType, setNewPropType] = useState<Property['type']>('Casa');
+  const [newPropStreet, setNewPropStreet] = useState('');
+  const [newPropNumber, setNewPropNumber] = useState('');
+  const [newPropNeighborhood, setNewPropNeighborhood] = useState('');
+  const [newPropCity, setNewPropCity] = useState('');
+  const [newPropState, setNewPropState] = useState('');
+  const [newPropRent, setNewPropRent] = useState<number | ''>(2000);
+  const [isSaving, setIsSaving] = useState(false);
 
   const navigate = useNavigate();
+  const { openNewRentalModal } = useOutletContext<{ openNewRentalModal: () => void }>() || {
+    openNewRentalModal: () => {},
+  };
 
   const loadProperties = async () => {
     try {
-      const data = await propertyService.getAll();
-      setProperties(data);
+      setIsLoading(true);
+      const list = await propertyService.getAll();
+      setProperties(list);
     } catch (err) {
-      toast.error('Erro ao carregar lista de imóveis');
+      console.error(err);
+      toast.error('Erro ao carregar imóveis.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,329 +56,307 @@ export const PropertiesListPage: React.FC = () => {
     loadProperties();
   }, []);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<PropertyFormData>({
-    resolver: zodResolver(propertySchema),
-    defaultValues: {
-      type: 'Casa',
-      status: 'AVAILABLE',
-      defaultRentValue: 2000,
-      state: 'SP',
-    },
-  });
+  const handleCreateProperty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPropName.trim()) {
+      toast.error('Informe o nome do imóvel.');
+      return;
+    }
 
-  const onAddProperty = async (data: PropertyFormData) => {
+    setIsSaving(true);
     try {
       await propertyService.create({
-        name: data.name,
-        type: data.type,
+        name: newPropName.trim(),
+        type: newPropType,
         address: {
-          street: data.street,
-          number: data.number,
-          complement: data.complement,
-          neighborhood: data.neighborhood,
-          city: data.city,
-          state: data.state,
-          zipCode: data.zipCode,
+          street: newPropStreet.trim() || 'Rua Principal',
+          number: newPropNumber.trim() || '123',
+          neighborhood: newPropNeighborhood.trim() || 'Centro',
+          city: newPropCity.trim() || 'São Paulo',
+          state: newPropState.trim() || 'SP',
+          zipCode: '00000-000',
         },
-        defaultRentValue: data.defaultRentValue,
-        status: data.status,
-        notes: data.notes,
+        defaultRentValue: Number(newPropRent) || 2000,
+        status: 'AVAILABLE',
       });
       toast.success('Imóvel cadastrado com sucesso!');
-      setIsModalOpen(false);
-      reset();
+      setIsNewPropertyOpen(false);
+      setNewPropName('');
+      setNewPropStreet('');
+      setNewPropNumber('');
+      setNewPropNeighborhood('');
+      setNewPropCity('');
+      setNewPropState('');
       loadProperties();
     } catch (err) {
-      toast.error('Erro ao cadastrar imóvel');
+      toast.error('Erro ao cadastrar imóvel.');
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  const cities = Array.from(new Set(properties.map((p) => p.address.city)));
-
-  const filtered = properties.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.code.toLowerCase().includes(search.toLowerCase()) ||
-      p.address.neighborhood.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
-    const matchesCity = cityFilter === 'ALL' || p.address.city === cityFilter;
-    return matchesSearch && matchesStatus && matchesCity;
-  });
 
   const totalCount = properties.length;
   const rentedCount = properties.filter((p) => p.status === 'RENTED').length;
   const availableCount = properties.filter((p) => p.status === 'AVAILABLE').length;
   const inactiveCount = properties.filter((p) => p.status === 'INACTIVE').length;
 
+  const filteredProperties = properties.filter((p) => {
+    const fullAddress = `${p.address.street} ${p.address.neighborhood} ${p.address.city}`.toLowerCase();
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullAddress.includes(searchTerm.toLowerCase()) ||
+      (p.currentTenantName || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (filter === 'RENTED') return p.status === 'RENTED';
+    if (filter === 'AVAILABLE') return p.status === 'AVAILABLE';
+    if (filter === 'INACTIVE') return p.status === 'INACTIVE';
+    return true;
+  });
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Imóveis"
-        description="Gerencie seu portfólio de imóveis residenciais e comerciais."
-        action={
+    <PageContainer>
+      <div className="space-y-4">
+        {/* Cabeçalho */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Meus imóveis
+            </h1>
+            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+              Veja seus imóveis alugados e disponíveis.
+            </p>
+
+            {/* Resumo Simples no Topo */}
+            <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span>{totalCount} imóveis</span>
+              <span>•</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{rentedCount} alugados</span>
+              <span>•</span>
+              <span className="text-blue-600 dark:text-blue-400">{availableCount} disponível</span>
+              <span>•</span>
+              <span className="text-slate-400">{inactiveCount} inativo</span>
+            </div>
+          </div>
+
           <Button
+            size="sm"
             variant="primary"
+            fullWidthMobile
             leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsNewPropertyOpen(true)}
+            className="font-bold shadow-xs shadow-blue-600/20"
           >
             + Novo imóvel
           </Button>
-        }
-      />
+        </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total de Imóveis"
-          value={totalCount}
-          subtitle="Carteira completa"
-          icon={<Home className="w-5 h-5" />}
-          iconBgColor="bg-blue-50 dark:bg-blue-950/50"
-          iconTextColor="text-blue-600"
-        />
-        <StatCard
-          title="Alugados"
-          value={rentedCount}
-          subtitle="Gerando receita mensal"
-          icon={<KeyRound className="w-5 h-5" />}
-          iconBgColor="bg-emerald-50 dark:bg-emerald-950/50"
-          iconTextColor="text-emerald-600"
-        />
-        <StatCard
-          title="Disponíveis"
-          value={availableCount}
-          subtitle="Prontos para locação"
-          icon={<Home className="w-5 h-5" />}
-          iconBgColor="bg-amber-50 dark:bg-amber-950/50"
-          iconTextColor="text-amber-600"
-        />
-        <StatCard
-          title="Inativos / Reforma"
-          value={inactiveCount}
-          subtitle="Manutenção ou bloqueados"
-          icon={<Wrench className="w-5 h-5" />}
-          iconBgColor="bg-slate-100 dark:bg-slate-800"
-          iconTextColor="text-slate-600"
-        />
-      </div>
+        {/* Busca & Filtros */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar imóvel..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-      {/* Search & Filters */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar por código, nome ou bairro..."
-          className="w-full sm:max-w-md"
-        />
-
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+          <StatusFilter
             options={[
-              { label: 'Todos os status', value: 'ALL' },
-              { label: 'Alugado', value: 'RENTED' },
-              { label: 'Disponível', value: 'AVAILABLE' },
-              { label: 'Inativo', value: 'INACTIVE' },
+              { label: 'Todos', value: 'ALL' },
+              { label: 'Alugados', value: 'RENTED' },
+              { label: 'Disponíveis', value: 'AVAILABLE' },
+              { label: 'Inativos', value: 'INACTIVE' },
             ]}
-          />
-          <Select
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            options={[
-              { label: 'Todas as cidades', value: 'ALL' },
-              ...cities.map((c) => ({ label: c, value: c })),
-            ]}
+            value={filter}
+            onChange={(val) => setFilter(val as 'ALL' | 'RENTED' | 'AVAILABLE' | 'INACTIVE')}
           />
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
-        {filtered.length === 0 ? (
-          <EmptyState
-            icon={<Home className="w-8 h-8" />}
-            title="Nenhum imóvel encontrado"
-            description="Tente ajustar seus filtros de busca ou cadastre um novo imóvel."
-            actionLabel="+ Cadastrar Imóvel"
-            onAction={() => setIsModalOpen(true)}
-          />
+        {/* Lista de Imóveis */}
+        {isLoading ? (
+          <div className="space-y-3 animate-pulse">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            ))}
+          </div>
+        ) : filteredProperties.length === 0 ? (
+          <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
+            <p className="text-slate-500 text-xs sm:text-sm">Nenhum imóvel encontrado.</p>
+            <Button size="sm" variant="primary" onClick={() => setIsNewPropertyOpen(true)}>
+              + Cadastrar imóvel
+            </Button>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="px-4 py-3.5">Código</th>
-                  <th className="px-4 py-3.5">Imóvel</th>
-                  <th className="px-4 py-3.5">Endereço</th>
-                  <th className="px-4 py-3.5">Inquilino Atual</th>
-                  <th className="px-4 py-3.5">Valor Padrão</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-500">
-                      {p.code}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{p.name}</p>
-                      <p className="text-xs text-slate-400">{p.type}</p>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
-                      {p.address.street}, {p.address.number} - {p.address.neighborhood}, {p.address.city}/{p.address.state}
-                    </td>
-                    <td className="px-4 py-3.5 font-medium text-slate-900 dark:text-slate-100">
-                      {p.currentTenantName || <span className="text-slate-400 text-xs">—</span>}
-                    </td>
-                    <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">
-                      {formatCurrency(p.defaultRentValue)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <PropertyStatusBadge status={p.status} />
-                    </td>
-                    <td className="px-4 py-3.5 text-right space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        leftIcon={<Eye className="w-3.5 h-3.5" />}
-                        onClick={() => navigate(`/imoveis/${p.id}`)}
-                      >
-                        Detalhes
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {filteredProperties.map((p) => (
+              <div
+                key={p.id}
+                className="p-4 sm:px-6 sm:py-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+              >
+                {/* Nome e Endereço */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-normal">
+                      {p.name}
+                    </h3>
+                    {p.status === 'RENTED' && (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                        Alugado
+                      </span>
+                    )}
+                    {p.status === 'AVAILABLE' && (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400">
+                        Disponível
+                      </span>
+                    )}
+                    {p.status === 'INACTIVE' && (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {p.address.street}, {p.address.number} {p.address.neighborhood ? `- ${p.address.neighborhood}` : ''}
+                  </p>
+
+                  {p.status === 'RENTED' && p.currentTenantName && (
+                    <p className="text-xs text-slate-700 dark:text-slate-300 font-semibold">
+                      {p.currentTenantName} • {formatCurrency(p.defaultRentValue)}/mês
+                    </p>
+                  )}
+                </div>
+
+                {/* Ações */}
+                <div>
+                  {p.status === 'AVAILABLE' ? (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      leftIcon={<KeyRound className="w-4 h-4" />}
+                      onClick={openNewRentalModal}
+                      className="font-bold text-xs shadow-xs"
+                      fullWidthMobile
+                    >
+                      Iniciar aluguel
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      rightIcon={<ChevronRight className="w-4 h-4" />}
+                      onClick={() => navigate(`/imoveis/${p.id}`)}
+                      className="font-semibold text-xs"
+                      fullWidthMobile
+                    >
+                      Ver imóvel
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </div>
 
-      {/* New Property Modal */}
+      {/* Modal + Novo Imóvel */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="+ Novo Imóvel"
-        maxWidth="2xl"
+        isOpen={isNewPropertyOpen}
+        onClose={() => setIsNewPropertyOpen(false)}
+        title="Cadastrar Novo Imóvel"
+        maxWidth="md"
       >
-        <form onSubmit={handleSubmit(onAddProperty)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <Input
-                label="Nome do Imóvel *"
-                placeholder="Ex: Apto 102 - Edifício Paulista"
-                {...register('name')}
-                error={errors.name?.message}
-              />
-            </div>
-            <Select
-              label="Tipo de Imóvel *"
-              options={[
-                { label: 'Casa', value: 'Casa' },
-                { label: 'Apartamento', value: 'Apartamento' },
-                { label: 'Sala comercial', value: 'Sala comercial' },
-                { label: 'Terreno', value: 'Terreno' },
-                { label: 'Outro', value: 'Outro' },
-              ]}
-              {...register('type')}
-              error={errors.type?.message}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <Input
-                label="Rua / Logradouro *"
-                placeholder="Ex: Av. Paulista"
-                {...register('street')}
-                error={errors.street?.message}
-              />
-            </div>
-            <Input
-              label="Número *"
-              placeholder="1000"
-              {...register('number')}
-              error={errors.number?.message}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              label="Complemento"
-              placeholder="Apto 44 / Bloco B"
-              {...register('complement')}
-            />
-            <Input
-              label="Bairro *"
-              placeholder="Bela Vista"
-              {...register('neighborhood')}
-              error={errors.neighborhood?.message}
-            />
-            <Input
-              label="CEP *"
-              placeholder="01310-100"
-              {...register('zipCode')}
-              error={errors.zipCode?.message}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              label="Cidade *"
-              placeholder="São Paulo"
-              {...register('city')}
-              error={errors.city?.message}
-            />
-            <Input
-              label="Estado (UF) *"
-              placeholder="SP"
-              {...register('state')}
-              error={errors.state?.message}
-            />
-            <Input
-              label="Valor Padrão (R$) *"
-              type="number"
-              step="0.01"
-              {...register('defaultRentValue', { valueAsNumber: true })}
-              error={errors.defaultRentValue?.message}
-            />
-          </div>
-
-          <Select
-            label="Status Inicial *"
-            options={[
-              { label: 'Disponível', value: 'AVAILABLE' },
-              { label: 'Alugado', value: 'RENTED' },
-              { label: 'Inativo / Em Reforma', value: 'INACTIVE' },
-            ]}
-            {...register('status')}
-            error={errors.status?.message}
-          />
-
+        <form onSubmit={handleCreateProperty} className="space-y-4 p-2">
           <Input
-            label="Observações"
-            placeholder="Informações adicionais sobre vistorias, chaves, etc."
-            {...register('notes')}
+            label="Nome do imóvel *"
+            placeholder="Ex: Casa Jardim dos Estados, Apto 102"
+            value={newPropName}
+            onChange={(e) => setNewPropName(e.target.value)}
           />
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Tipo
+              </label>
+              <select
+                value={newPropType}
+                onChange={(e) => setNewPropType(e.target.value as Property['type'])}
+                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
+              >
+                <option value="Casa">Casa</option>
+                <option value="Apartamento">Apartamento</option>
+                <option value="Sala comercial">Sala comercial</option>
+                <option value="Terreno">Terreno</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <Input
+              label="Valor padrão do aluguel (R$)"
+              type="number"
+              value={newPropRent}
+              onChange={(e) => setNewPropRent(e.target.value === '' ? '' : Number(e.target.value))}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Input
+                label="Rua / Avenida"
+                placeholder="Rua das Palmeiras"
+                value={newPropStreet}
+                onChange={(e) => setNewPropStreet(e.target.value)}
+              />
+            </div>
+            <Input
+              label="Número"
+              placeholder="450"
+              value={newPropNumber}
+              onChange={(e) => setNewPropNumber(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <Input
+              label="Bairro"
+              placeholder="Jardim dos Estados"
+              value={newPropNeighborhood}
+              onChange={(e) => setNewPropNeighborhood(e.target.value)}
+            />
+            <Input
+              label="Cidade"
+              placeholder="São Paulo"
+              value={newPropCity}
+              onChange={(e) => setNewPropCity(e.target.value)}
+            />
+            <Input
+              label="UF"
+              placeholder="SP"
+              value={newPropState}
+              onChange={(e) => setNewPropState(e.target.value)}
+            />
+          </div>
+
+          <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsNewPropertyOpen(false)}
+              disabled={isSaving}
+            >
               Cancelar
             </Button>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
-              Salvar Imóvel
+            <Button type="submit" variant="primary" isLoading={isSaving} className="font-bold">
+              Cadastrar imóvel
             </Button>
           </div>
         </form>
       </Modal>
     </div>
+    </PageContainer>
   );
 };

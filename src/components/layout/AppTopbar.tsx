@@ -44,16 +44,17 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
   }, []);
 
   const getPageTitle = (path: string): string => {
-    if (path.startsWith('/dashboard')) return 'Dashboard';
-    if (path.startsWith('/imoveis')) return 'Gestão de Imóveis';
-    if (path.startsWith('/inquilinos')) return 'Gestão de Inquilinos';
-    if (path.startsWith('/contratos')) return 'Contratos de Aluguel';
-    if (path.startsWith('/cobrancas')) return 'Controle de Cobranças';
-    if (path.startsWith('/calendario')) return 'Calendário de Vencimentos';
-    if (path.startsWith('/financeiro')) return 'Visão Financeira';
-    if (path.startsWith('/relatorios')) return 'Relatórios & Análises';
-    if (path.startsWith('/configuracoes')) return 'Configurações do Sistema';
-    return 'Sistema de Gestão';
+    if (path.startsWith('/dashboard')) return 'Início';
+    if (path.startsWith('/alugueis')) return 'Meus Aluguéis';
+    if (path.startsWith('/clientes') || path.startsWith('/inquilinos')) return 'Clientes';
+    if (path.startsWith('/imoveis')) return 'Meus Imóveis';
+    if (path.startsWith('/contratos')) return 'Contratos';
+    if (path.startsWith('/cobrancas')) return 'Cobranças';
+    if (path.startsWith('/calendario')) return 'Calendário';
+    if (path.startsWith('/financeiro')) return 'Financeiro';
+    if (path.startsWith('/relatorios')) return 'Relatórios';
+    if (path.startsWith('/configuracoes')) return 'Configurações';
+    return 'Assistente de Aluguel';
   };
 
   return (
@@ -63,7 +64,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
         <div className="flex items-center space-x-3">
           <button
             onClick={onOpenMobileMenu}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg lg:hidden"
+            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl lg:hidden"
             aria-label="Abrir Menu"
           >
             <Menu className="w-5 h-5" />
@@ -73,7 +74,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
           </h2>
         </div>
 
-        {/* Center: Search Trigger (Desktop) */}
+        {/* Center: Search Trigger (Desktop ONLY) */}
         <div className="hidden md:flex items-center flex-1 max-w-xs mx-6">
           <button
             onClick={() => setIsSearchOpen(true)}
@@ -81,7 +82,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
           >
             <span className="flex items-center gap-2">
               <Search className="w-4 h-4 text-slate-400" />
-              <span>Buscar imóvel, inquilino...</span>
+              <span>Buscar aluguel, cliente...</span>
             </span>
             <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-slate-400">
               Ctrl+K
@@ -90,31 +91,24 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Quick Action Button */}
-          <Button
-            size="sm"
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={onOpenNewChargeModal}
-            className="shadow-xs"
-          >
-            <span className="hidden sm:inline">+ Nova cobrança</span>
-            <span className="sm:hidden">Nova</span>
-          </Button>
-
-          {/* Search Trigger (Mobile Icon) */}
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="p-2 md:hidden text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-          >
-            <Search className="w-5 h-5" />
-          </button>
+        <div className="flex items-center space-x-2">
+          {/* Quick Action Button (Desktop ONLY, on mobile the bottom + button is used) */}
+          <div className="hidden sm:block">
+            <Button
+              size="sm"
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onOpenNewChargeModal}
+              className="font-bold shadow-xs"
+            >
+              + Novo aluguel
+            </Button>
+          </div>
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
           >
             {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
@@ -127,20 +121,20 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
           <div className="relative pl-1 border-l border-slate-200 dark:border-slate-800" ref={userMenuRef}>
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center space-x-2.5 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[40px]"
             >
               <img
                 src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
                 alt={user?.name || 'Usuário'}
                 className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
               />
-              <span className="hidden sm:inline text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <span className="hidden md:inline text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {user?.name || 'Eduardo Martins'}
               </span>
             </button>
 
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {user?.name || 'Eduardo Martins'}
@@ -152,7 +146,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
                   <Link
                     to="/configuracoes"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <UserIcon className="w-4 h-4 text-slate-400" />
                     <span>Meu Perfil</span>
@@ -160,7 +154,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
                   <Link
                     to="/configuracoes"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <SettingsIcon className="w-4 h-4 text-slate-400" />
                     <span>Configurações</span>
@@ -174,7 +168,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
                       logout();
                       navigate('/login');
                     }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left font-medium cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left font-medium cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Sair do sistema</span>

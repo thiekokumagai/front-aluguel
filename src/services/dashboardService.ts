@@ -24,7 +24,10 @@ export const dashboardService = {
     const todayStr = new Date().toISOString().split('T')[0];
 
     charges.forEach((c) => {
-      if (c.status === 'PAID' && (c.competence === '09/2026' || c.paymentDate?.startsWith('2026-09') || c.paymentDate?.startsWith('2026-08'))) {
+      // Consider September 2026 as current month for demo data
+      const isCurrentMonth = c.competence === '09/2026' || c.dueDate.startsWith('2026-09') || c.paymentDate?.startsWith('2026-09');
+
+      if (c.status === 'PAID' && isCurrentMonth) {
         receivedRevenue += c.updatedValue;
         paidCount++;
       } else if (c.status === 'PENDING') {
@@ -61,14 +64,29 @@ export const dashboardService = {
 
   async getRevenueChartData() {
     await delay();
-    return [
-      { month: 'Março', recebido: 12500, pendente: 0 },
-      { month: 'Abril', recebido: 13800, pendente: 0 },
-      { month: 'Maio', recebido: 15200, pendente: 0 },
-      { month: 'Junho', recebido: 16000, pendente: 0 },
-      { month: 'Julho', recebido: 17100, pendente: 0 },
-      { month: 'Agosto', recebido: 14200, pendente: 2252.80 },
-      { month: 'Setembro', recebido: 3200, pendente: 10500 },
-    ];
+    const charges = await chargeService.getAll();
+
+    // Group charges by competence month
+    const monthsMap: Record<string, { month: string; recebido: number; pendente: number }> = {
+      '04/2026': { month: 'Abril', recebido: 13800, pendente: 0 },
+      '05/2026': { month: 'Maio', recebido: 15200, pendente: 0 },
+      '06/2026': { month: 'Junho', recebido: 16000, pendente: 0 },
+      '07/2026': { month: 'Julho', recebido: 17100, pendente: 0 },
+      '08/2026': { month: 'Agosto', recebido: 14200, pendente: 2252.8 },
+      '09/2026': { month: 'Setembro', recebido: 0, pendente: 0 },
+    };
+
+    charges.forEach((c) => {
+      const comp = c.competence;
+      if (monthsMap[comp]) {
+        if (c.status === 'PAID') {
+          monthsMap[comp].recebido += c.updatedValue;
+        } else if (c.status === 'PENDING' || c.status === 'OVERDUE') {
+          monthsMap[comp].pendente += c.updatedValue;
+        }
+      }
+    });
+
+    return Object.values(monthsMap);
   },
 };
