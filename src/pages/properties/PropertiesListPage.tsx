@@ -32,6 +32,9 @@ export const PropertiesListPage: React.FC = () => {
   const [newPropNeighborhood, setNewPropNeighborhood] = useState('');
   const [newPropCity, setNewPropCity] = useState('');
   const [newPropState, setNewPropState] = useState('');
+  const [newPropZipCode, setNewPropZipCode] = useState('');
+  const [newPropComplement, setNewPropComplement] = useState('');
+  const [newPropNotes, setNewPropNotes] = useState('');
   const [newPropRent, setNewPropRent] = useState<number | ''>(2000);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -72,12 +75,14 @@ export const PropertiesListPage: React.FC = () => {
         address: {
           street: newPropStreet.trim() || 'Rua Principal',
           number: newPropNumber.trim() || '123',
+          complement: newPropComplement.trim(),
           neighborhood: newPropNeighborhood.trim() || 'Centro',
           city: newPropCity.trim() || 'São Paulo',
           state: newPropState.trim() || 'SP',
-          zipCode: '00000-000',
+          zipCode: newPropZipCode.trim() || '00000-000',
         },
         defaultRentValue: Number(newPropRent) || 2000,
+        notes: newPropNotes.trim() || undefined,
         status: 'AVAILABLE',
       });
       toast.success('Imóvel cadastrado com sucesso!');
@@ -85,9 +90,13 @@ export const PropertiesListPage: React.FC = () => {
       setNewPropName('');
       setNewPropStreet('');
       setNewPropNumber('');
+      setNewPropComplement('');
       setNewPropNeighborhood('');
       setNewPropCity('');
       setNewPropState('');
+      setNewPropZipCode('');
+      setNewPropNotes('');
+      setNewPropRent(2000);
       loadProperties();
     } catch (err) {
       toast.error('Erro ao cadastrar imóvel.');
@@ -282,7 +291,7 @@ export const PropertiesListPage: React.FC = () => {
         isOpen={isNewPropertyOpen}
         onClose={() => setIsNewPropertyOpen(false)}
         title="Cadastrar Novo Imóvel"
-        maxWidth="md"
+        maxWidth="xl"
       >
         <form onSubmit={handleCreateProperty} className="space-y-4 p-2">
           <Input
@@ -306,10 +315,10 @@ export const PropertiesListPage: React.FC = () => {
               ]}
             />
             <Input
-              label="Valor do aluguel (R$)"
-              type="number"
-              value={newPropRent}
-              onChange={(e) => setNewPropRent(e.target.value === '' ? '' : Number(e.target.value))}
+              label="CEP"
+              placeholder="00000-000"
+              value={newPropZipCode}
+              onChange={(e) => setNewPropZipCode(e.target.value)}
             />
           </div>
 
@@ -348,6 +357,34 @@ export const PropertiesListPage: React.FC = () => {
               placeholder="SP"
               value={newPropState}
               onChange={(e) => setNewPropState(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <Input
+              label="Complemento"
+              placeholder="Ex: Apto 101, Bloco B"
+              value={newPropComplement}
+              onChange={(e) => setNewPropComplement(e.target.value)}
+            />
+            <Input
+              label="Valor Sugerido (R$)"
+              type="number"
+              value={newPropRent}
+              onChange={(e) => setNewPropRent(e.target.value === '' ? '' : Number(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Observações
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Anotações sobre o imóvel..."
+              value={newPropNotes}
+              onChange={(e) => setNewPropNotes(e.target.value)}
+              className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
             />
           </div>
 

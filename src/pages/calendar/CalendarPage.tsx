@@ -52,7 +52,7 @@ export const CalendarPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Calendário de Vencimentos"
+        title="Calendário de Aluguéis"
         description="Acompanhe cronologicamente todos os vencimentos de aluguéis."
         action={
           <div className="flex items-center gap-2">

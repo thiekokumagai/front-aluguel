@@ -48,7 +48,7 @@ export const AppTopbar: React.FC<AppTopbarProps> = ({
     if (path.startsWith('/alugueis')) return 'Meus Aluguéis';
     if (path.startsWith('/clientes') || path.startsWith('/inquilinos')) return 'Clientes';
     if (path.startsWith('/imoveis')) return 'Meus Imóveis';
-    if (path.startsWith('/contratos')) return 'Contratos';
+
     if (path.startsWith('/cobrancas')) return 'Cobranças';
     if (path.startsWith('/calendario')) return 'Calendário';
     if (path.startsWith('/financeiro')) return 'Financeiro';

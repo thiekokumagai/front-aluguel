@@ -7,7 +7,6 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { PropertiesListPage } from '../pages/properties/PropertiesListPage';
 import { PropertyDetailPage } from '../pages/properties/PropertyDetailPage';
-import { ContractsListPage } from '../pages/contracts/ContractsListPage';
 import { ChargesListPage } from '../pages/charges/ChargesListPage';
 import { ChargeDetailPage } from '../pages/charges/ChargeDetailPage';
 import { CalendarPage } from '../pages/calendar/CalendarPage';
@@ -51,7 +50,6 @@ export const AppRoutes: React.FC = () => {
         <Route path="imoveis/:id" element={<PropertyDetailPage />} />
         <Route path="inquilinos" element={<ClientsListPage />} />
         <Route path="inquilinos/:id" element={<ClientDetailPage />} />
-        <Route path="contratos" element={<ContractsListPage />} />
         <Route path="cobrancas" element={<ChargesListPage />} />
         <Route path="cobrancas/:id" element={<ChargeDetailPage />} />
         <Route path="calendario" element={<CalendarPage />} />

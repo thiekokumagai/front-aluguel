@@ -57,12 +57,12 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
     city: '',
     state: '',
     zipCode: '',
+    notes: '',
   });
 
   // Step 2: Tenant
   const [tenantMode, setTenantMode] = useState<'SELECT' | 'NEW'>('SELECT');
   const [selectedTenantId, setSelectedTenantId] = useState('');
-  const [showMoreTenantInfo, setShowMoreTenantInfo] = useState(false);
   const [newTenant, setNewTenant] = useState({
     name: '',
     whatsapp: '',
@@ -82,10 +82,10 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
   // Step 3 Advanced options
   const [showAdvancedRent, setShowAdvancedRent] = useState<boolean>(false);
   const [readjustmentType, setReadjustmentType] = useState<ReadjustmentType>('IPCA');
-  const [finePercent, setFinePercent] = useState<number>(2);
-  const [interestPercentMonth, setInterestPercentMonth] = useState<number>(1);
+  const [finePercent, setFinePercent] = useState<number | ''>('');
+  const [interestPercentMonth, setInterestPercentMonth] = useState<number | ''>('');
   const [securityDeposit, setSecurityDeposit] = useState<number | ''>('');
-  const [toleranceDays, setToleranceDays] = useState<number>(3);
+  const [toleranceDays, setToleranceDays] = useState<number | ''>('');
   const [notes, setNotes] = useState<string>('');
 
   // Step 4: Automation
@@ -240,6 +240,7 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
             zipCode: newProperty.zipCode,
           },
           defaultRentValue: Number(rentValue),
+          notes: newProperty.notes,
           status: 'RENTED',
         });
       } else {
@@ -281,9 +282,9 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
         rentValue: Number(rentValue),
         dueDay,
         readjustmentType,
-        finePercent,
-        interestPercentMonth,
-        toleranceDays,
+        finePercent: Number(finePercent) || 0,
+        interestPercentMonth: Number(interestPercentMonth) || 0,
+        toleranceDays: Number(toleranceDays) || 0,
         securityDeposit: Number(securityDeposit) || 0,
         autoGenerateCharges,
         daysBeforeDueToGenerate,
@@ -308,8 +309,8 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
           competence: currentMonthStr,
           originalValue: Number(rentValue),
           dueDate: firstDueStr,
-          finePercent,
-          interestPercent: interestPercentMonth,
+          finePercent: Number(finePercent) || 0,
+          interestPercent: Number(interestPercentMonth) || 0,
           description: `Aluguel - ${finalProperty.name}`,
           sendAfterCreate: autoSendWhatsApp,
         });
@@ -511,12 +512,6 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                       onChange={(e) => setNewProperty({ ...newProperty, name: e.target.value })}
                     />
                     <div className="grid grid-cols-2 gap-3 items-end">
-                      <Input
-                        label="CEP"
-                        placeholder="00000-000"
-                        value={newProperty.zipCode}
-                        onChange={(e) => setNewProperty({ ...newProperty, zipCode: e.target.value })}
-                      />
                       <Select
                         label="Tipo"
                         value={newProperty.type}
@@ -529,19 +524,25 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                           { label: 'Outro', value: 'Outro' },
                         ]}
                       />
+                      <Input
+                        label="CEP"
+                        placeholder="00000-000"
+                        value={newProperty.zipCode}
+                        onChange={(e) => setNewProperty({ ...newProperty, zipCode: e.target.value })}
+                      />
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="col-span-2">
                         <Input
-                          label="Endereço"
-                          placeholder="Rua / Avenida"
+                          label="Rua / Avenida"
+                          placeholder="Rua das Palmeiras"
                           value={newProperty.street}
                           onChange={(e) => setNewProperty({ ...newProperty, street: e.target.value })}
                         />
                       </div>
                       <Input
                         label="Número"
-                        placeholder="123"
+                        placeholder="450"
                         value={newProperty.number}
                         onChange={(e) => setNewProperty({ ...newProperty, number: e.target.value })}
                       />
@@ -549,13 +550,13 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                     <div className="grid grid-cols-3 gap-3">
                       <Input
                         label="Bairro"
-                        placeholder="Bairro"
+                        placeholder="Jardim dos Estados"
                         value={newProperty.neighborhood}
                         onChange={(e) => setNewProperty({ ...newProperty, neighborhood: e.target.value })}
                       />
                       <Input
                         label="Cidade"
-                        placeholder="Cidade"
+                        placeholder="São Paulo"
                         value={newProperty.city}
                         onChange={(e) => setNewProperty({ ...newProperty, city: e.target.value })}
                       />
@@ -564,6 +565,24 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                         placeholder="SP"
                         value={newProperty.state}
                         onChange={(e) => setNewProperty({ ...newProperty, state: e.target.value })}
+                      />
+                    </div>
+                    <Input
+                      label="Complemento"
+                      placeholder="Ex: Apto 101, Bloco B"
+                      value={newProperty.complement}
+                      onChange={(e) => setNewProperty({ ...newProperty, complement: e.target.value })}
+                    />
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Observações
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Anotações sobre o imóvel..."
+                        value={newProperty.notes}
+                        onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
+                        className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
                       />
                     </div>
                   </div>
@@ -642,44 +661,27 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                       />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowMoreTenantInfo(!showMoreTenantInfo)}
-                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 pt-1"
-                    >
-                      {showMoreTenantInfo ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      <span>+ Mais informações</span>
-                    </button>
-
-                    {showMoreTenantInfo && (
-                      <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
-                        <Input
-                          label="E-mail (opcional)"
-                          type="email"
-                          placeholder="exemplo@email.com"
-                          value={newTenant.email}
-                          onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value })}
+                    <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <Input
+                        label="E-mail"
+                        type="email"
+                        placeholder="exemplo@email.com"
+                        value={newTenant.email}
+                        onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value })}
+                      />                        
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Observações
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="Anotações sobre a pessoa..."
+                          value={newTenant.notes}
+                          onChange={(e) => setNewTenant({ ...newTenant, notes: e.target.value })}
+                          className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
                         />
-                        <Input
-                          label="Data de nascimento (opcional)"
-                          type="date"
-                          value={newTenant.birthDate}
-                          onChange={(e) => setNewTenant({ ...newTenant, birthDate: e.target.value })}
-                        />
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Observações
-                          </label>
-                          <textarea
-                            rows={2}
-                            placeholder="Anotações sobre a pessoa..."
-                            value={newTenant.notes}
-                            onChange={(e) => setNewTenant({ ...newTenant, notes: e.target.value })}
-                            className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
-                          />
-                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -791,20 +793,23 @@ export const NewRentalModal: React.FC<NewRentalModalProps> = ({
                         <Input
                           label="Multa (%)"
                           type="number"
+                          placeholder="0"
                           value={finePercent}
-                          onChange={(e) => setFinePercent(Number(e.target.value))}
+                          onChange={(e) => setFinePercent(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                         <Input
                           label="Juros/mês (%)"
                           type="number"
+                          placeholder="0"
                           value={interestPercentMonth}
-                          onChange={(e) => setInterestPercentMonth(Number(e.target.value))}
+                          onChange={(e) => setInterestPercentMonth(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                         <Input
                           label="Tolerância (dias)"
                           type="number"
+                          placeholder="0"
                           value={toleranceDays}
-                          onChange={(e) => setToleranceDays(Number(e.target.value))}
+                          onChange={(e) => setToleranceDays(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                       </div>
 

@@ -34,6 +34,7 @@ export const ClientsListPage: React.FC = () => {
   const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
   const [newClientDocument, setNewClientDocument] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientNotes, setNewClientNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export const ClientsListPage: React.FC = () => {
         phone: newClientWhatsapp.trim(),
         document: newClientDocument.trim() || '000.000.000-00',
         email: newClientEmail.trim() || '',
+        notes: newClientNotes.trim() || '',
         status: 'Sem contrato',
       });
       toast.success('Cliente cadastrado com sucesso!');
@@ -84,6 +86,7 @@ export const ClientsListPage: React.FC = () => {
       setNewClientWhatsapp('');
       setNewClientDocument('');
       setNewClientEmail('');
+      setNewClientNotes('');
       loadData();
     } catch (err) {
       toast.error('Erro ao cadastrar cliente.');
@@ -264,7 +267,7 @@ export const ClientsListPage: React.FC = () => {
         isOpen={isNewClientOpen}
         onClose={() => setIsNewClientOpen(false)}
         title="Cadastrar Novo Cliente"
-        maxWidth="md"
+        maxWidth="xl"
       >
         <form onSubmit={handleCreateClient} className="space-y-4 p-2">
           <Input
@@ -273,25 +276,41 @@ export const ClientsListPage: React.FC = () => {
             value={newClientName}
             onChange={(e) => setNewClientName(e.target.value)}
           />
-          <Input
-            label="WhatsApp *"
-            placeholder="(67) 99999-9999"
-            value={newClientWhatsapp}
-            onChange={(e) => setNewClientWhatsapp(e.target.value)}
-          />
-          <Input
-            label="CPF / CNPJ (opcional)"
-            placeholder="000.000.000-00"
-            value={newClientDocument}
-            onChange={(e) => setNewClientDocument(e.target.value)}
-          />
-          <Input
-            label="E-mail (opcional)"
-            type="email"
-            placeholder="cliente@email.com"
-            value={newClientEmail}
-            onChange={(e) => setNewClientEmail(e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="WhatsApp *"
+              placeholder="(67) 99999-9999"
+              value={newClientWhatsapp}
+              onChange={(e) => setNewClientWhatsapp(e.target.value)}
+            />
+            <Input
+              label="CPF / CNPJ"
+              placeholder="000.000.000-00"
+              value={newClientDocument}
+              onChange={(e) => setNewClientDocument(e.target.value)}
+            />
+          </div>
+          <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+            <Input
+              label="E-mail"
+              type="email"
+              placeholder="cliente@email.com"
+              value={newClientEmail}
+              onChange={(e) => setNewClientEmail(e.target.value)}
+            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Observações
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Anotações sobre a pessoa..."
+                value={newClientNotes}
+                onChange={(e) => setNewClientNotes(e.target.value)}
+                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
+              />
+            </div>
+          </div>
 
           <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
             <Button

@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   MessageSquare,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CalendarPage } from '../calendar/CalendarPage';
@@ -108,18 +109,13 @@ export const RentalsListPage: React.FC = () => {
   if (showCalendarView) {
     return (
       <PageContainer>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100">
-            Calendário de Aluguéis
-          </h1>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowCalendarView(false)}
-          >
-            &larr; Voltar para lista de aluguéis
-          </Button>
-        </div>
+        <button
+          onClick={() => setShowCalendarView(false)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 transition-colors cursor-pointer mb-2"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Voltar para lista de aluguéis</span>
+        </button>
         <CalendarPage />
       </PageContainer>
     );

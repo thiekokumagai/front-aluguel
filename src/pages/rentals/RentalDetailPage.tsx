@@ -5,6 +5,9 @@ import { chargeService } from '../../services/chargeService';
 import type { Contract, Charge } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { SendExtraChargeModal } from '../../components/charges/SendExtraChargeModal';
 import {
   ArrowLeft,
@@ -37,7 +40,22 @@ export const RentalDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isExtraChargeOpen, setIsExtraChargeOpen] = useState(false);
+  const [isContractDocOpen, setIsContractDocOpen] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Edit Contract Modal
+  const [isEditContractOpen, setIsEditContractOpen] = useState(false);
+  const [editRentValue, setEditRentValue] = useState<number | ''>(0);
+  const [editDueDay, setEditDueDay] = useState<number>(5);
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editHasEndDate, setEditHasEndDate] = useState(true);
+  const [editEndDate, setEditEndDate] = useState('');
+  const [editReadjustmentType, setEditReadjustmentType] = useState<Contract['readjustmentType']>('IPCA');
+  const [editSecurityDeposit, setEditSecurityDeposit] = useState<number | ''>('');
+  const [editFinePercent, setEditFinePercent] = useState<number | ''>('');
+  const [editInterestPercentMonth, setEditInterestPercentMonth] = useState<number | ''>('');
+  const [editNotes, setEditNotes] = useState('');
+  const [isSavingContract, setIsSavingContract] = useState(false);
 
   const loadRentalDetail = async () => {
     if (!id) return;
@@ -88,6 +106,48 @@ export const RentalDetailPage: React.FC = () => {
       } catch (err) {
         toast.error('Erro ao encerrar aluguel.');
       }
+    }
+  };
+
+  const openEditContract = () => {
+    if (!contract) return;
+    setEditRentValue(contract.rentValue);
+    setEditDueDay(contract.dueDay);
+    setEditStartDate(contract.startDate);
+    setEditHasEndDate(!!contract.endDate);
+    setEditEndDate(contract.endDate || '');
+    setEditReadjustmentType(contract.readjustmentType);
+    setEditSecurityDeposit(contract.securityDeposit || '');
+    setEditFinePercent(contract.finePercent);
+    setEditInterestPercentMonth(contract.interestPercentMonth);
+    setEditNotes(contract.notes || '');
+    setIsEditContractOpen(true);
+  };
+
+  const handleEditContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contract) return;
+
+    setIsSavingContract(true);
+    try {
+      await contractService.update(contract.id, {
+        rentValue: Number(editRentValue) || 0,
+        dueDay: editDueDay,
+        startDate: editStartDate,
+        endDate: editHasEndDate ? editEndDate : '',
+        readjustmentType: editReadjustmentType,
+        securityDeposit: editSecurityDeposit ? Number(editSecurityDeposit) : undefined,
+        finePercent: Number(editFinePercent) || 0,
+        interestPercentMonth: Number(editInterestPercentMonth) || 0,
+        notes: editNotes,
+      });
+      toast.success('Contrato atualizado com sucesso!');
+      setIsEditContractOpen(false);
+      loadRentalDetail();
+    } catch (error) {
+      toast.error('Erro ao atualizar contrato.');
+    } finally {
+      setIsSavingContract(false);
     }
   };
 
@@ -250,7 +310,7 @@ export const RentalDetailPage: React.FC = () => {
                       <button
                         onClick={() => {
                           setShowMoreMenu(false);
-                          setActiveTab('CONTRACT');
+                          setIsContractDocOpen(true);
                         }}
                         className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-medium cursor-pointer"
                       >
@@ -421,7 +481,7 @@ export const RentalDetailPage: React.FC = () => {
                     variant="outline"
                     fullWidthMobile
                     leftIcon={<Edit className="w-4 h-4" />}
-                    onClick={() => toast.info('Edição rápida de contrato.')}
+                    onClick={openEditContract}
                     className="font-bold text-xs"
                   >
                     Editar contrato
@@ -431,7 +491,7 @@ export const RentalDetailPage: React.FC = () => {
                     variant="ghost"
                     fullWidthMobile
                     leftIcon={<FileText className="w-4 h-4" />}
-                    onClick={() => navigate('/contratos')}
+                    onClick={() => setIsContractDocOpen(true)}
                     className="font-semibold text-xs text-slate-600 dark:text-slate-400"
                   >
                     Ver contrato completo
@@ -460,6 +520,211 @@ export const RentalDetailPage: React.FC = () => {
           defaultContractId={contract.id}
           onSuccess={loadRentalDetail}
         />
+
+        {/* Modal do Documento do Contrato */}
+        <Modal
+          isOpen={isContractDocOpen}
+          onClose={() => setIsContractDocOpen(false)}
+          title={`Contrato de Locação - ${contract.propertyName}`}
+          maxWidth="2xl"
+        >
+          <div className="p-4 space-y-6 max-h-[70vh] overflow-y-auto text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+            <h2 className="text-xl font-bold text-center text-slate-900 dark:text-white uppercase tracking-wider mb-6">
+              Instrumento Particular de Locação de Imóvel Residencial
+            </h2>
+
+            <p>
+              Pelo presente instrumento particular de locação, de um lado o <strong>LOCADOR</strong> (Nome do Proprietário), 
+              e de outro lado o <strong>LOCATÁRIO</strong>, Sr(a). <strong>{contract.tenantName}</strong>, 
+              têm justo e contratado o que segue:
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white mt-4">1. DO OBJETO</h3>
+            <p>
+              O presente contrato tem como objeto a locação do imóvel denominado <strong>{contract.propertyName}</strong>, 
+              que será utilizado exclusivamente para fins residenciais pelo LOCATÁRIO.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white mt-4">2. DO PRAZO</h3>
+            <p>
+              O prazo da locação é de início em <strong>{formatDate(contract.startDate)}</strong> e término em <strong>{formatDate(contract.endDate)}</strong>, 
+              data em que o LOCATÁRIO se obriga a restituir o imóvel completamente desocupado.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white mt-4">3. DO VALOR E PAGAMENTO</h3>
+            <p>
+              O valor mensal do aluguel fica pactuado em <strong>{formatCurrency(contract.rentValue)}</strong>, 
+              com vencimento para todo dia <strong>{contract.dueDay}</strong> de cada mês. Em caso de atraso, 
+              haverá incidência de multa de <strong>{contract.finePercent}%</strong> e juros de mora de <strong>{contract.interestPercentMonth}%</strong> ao mês.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white mt-4">4. DA CAUÇÃO E REAJUSTE</h3>
+            <p>
+              O reajuste anual do aluguel será feito com base no índice <strong>{contract.readjustmentType}</strong>. 
+              {contract.securityDeposit ? ` Como garantia, foi depositado o valor de ${formatCurrency(contract.securityDeposit)} a título de caução.` : ' Não houve depósito de caução como garantia para este contrato.'}
+            </p>
+
+            {contract.notes && (
+              <>
+                <h3 className="font-bold text-slate-900 dark:text-white mt-4">5. OBSERVAÇÕES ESPECIAIS</h3>
+                <p>{contract.notes}</p>
+              </>
+            )}
+
+            <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex justify-between gap-8">
+              <div className="flex-1 text-center">
+                <div className="border-b border-slate-400 mb-2 w-3/4 mx-auto"></div>
+                <p className="text-xs font-semibold">LOCADOR</p>
+              </div>
+              <div className="flex-1 text-center">
+                <div className="border-b border-slate-400 mb-2 w-3/4 mx-auto"></div>
+                <p className="text-xs font-semibold">LOCATÁRIO ({contract.tenantName})</p>
+              </div>
+            </div>
+          </div>
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <Button onClick={() => setIsContractDocOpen(false)} variant="outline">
+              Fechar
+            </Button>
+          </div>
+        </Modal>
+
+        {/* Modal de Edição de Contrato */}
+        <Modal
+          isOpen={isEditContractOpen}
+          onClose={() => setIsEditContractOpen(false)}
+          title="Editar Contrato"
+          maxWidth="lg"
+        >
+          <form onSubmit={handleEditContract} className="p-2 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+              <Input
+                label="Valor do aluguel *"
+                type="number"
+                placeholder="2000"
+                value={editRentValue}
+                onChange={(e) => setEditRentValue(e.target.value === '' ? '' : Number(e.target.value))}
+              />
+              <Select
+                label="Vencimento todo dia *"
+                value={editDueDay}
+                onChange={(e) => setEditDueDay(Number(e.target.value))}
+                options={[1, 5, 8, 10, 15, 20, 25, 28, 30].map((day) => ({
+                  label: `Dia ${day}`,
+                  value: day,
+                }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+              <Input
+                label="Início do aluguel *"
+                type="date"
+                value={editStartDate}
+                onChange={(e) => setEditStartDate(e.target.value)}
+              />
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Tem data para terminar?
+                </label>
+                <div className="flex gap-4 py-2.5">
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editEndDateRadio"
+                      checked={!editHasEndDate}
+                      onChange={() => setEditHasEndDate(false)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Não</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editEndDateRadio"
+                      checked={editHasEndDate}
+                      onChange={() => setEditHasEndDate(true)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Sim</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {editHasEndDate && (
+              <Input
+                label="Data final do contrato *"
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+              />
+            )}
+
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-4 space-y-3 bg-slate-50 dark:bg-slate-800/40">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2 uppercase">Opções Avançadas</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <Select
+                  label="Reajuste anual"
+                  value={editReadjustmentType}
+                  onChange={(e) => setEditReadjustmentType(e.target.value as Contract['readjustmentType'])}
+                  options={[
+                    { label: 'IPCA', value: 'IPCA' },
+                    { label: 'IGP-M', value: 'IGP-M' },
+                    { label: 'Manual', value: 'Manual' },
+                    { label: 'Sem reajuste', value: 'Sem reajuste' },
+                  ]}
+                />
+                <Input
+                  label="Caução (R$)"
+                  type="number"
+                  placeholder="0"
+                  value={editSecurityDeposit}
+                  onChange={(e) => setEditSecurityDeposit(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Multa (%)"
+                  type="number"
+                  placeholder="0"
+                  value={editFinePercent}
+                  onChange={(e) => setEditFinePercent(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+                <Input
+                  label="Juros/mês (%)"
+                  type="number"
+                  placeholder="0"
+                  value={editInterestPercentMonth}
+                  onChange={(e) => setEditInterestPercentMonth(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Observações adicionais
+                </label>
+                <textarea
+                  rows={2}
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+              <Button type="button" variant="outline" onClick={() => setIsEditContractOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSavingContract} className="font-bold">
+                Salvar alterações
+              </Button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </PageContainer>
   );

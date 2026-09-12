@@ -36,7 +36,9 @@ export const ClientDetailPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editDocument, setEditDocument] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editNotes, setEditNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const loadClientDetail = async () => {
@@ -62,7 +64,9 @@ export const ClientDetailPage: React.FC = () => {
 
       setEditName(t.name);
       setEditWhatsapp(t.whatsapp || t.phone);
+      setEditDocument(t.document || '');
       setEditEmail(t.email || '');
+      setEditNotes(t.notes || '');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao carregar detalhes do cliente.');
@@ -85,7 +89,9 @@ export const ClientDetailPage: React.FC = () => {
         name: editName,
         whatsapp: editWhatsapp,
         phone: editWhatsapp,
+        document: editDocument,
         email: editEmail,
+        notes: editNotes,
       });
       toast.success('Dados do cliente atualizados!');
       setIsEditOpen(false);
@@ -201,6 +207,13 @@ export const ClientDetailPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {client.notes && (
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 text-sm mt-4">
+            <span className="text-xs font-semibold text-slate-400">Observações</span>
+            <p className="font-medium text-slate-700 dark:text-slate-300 mt-1">{client.notes}</p>
+          </div>
+        )}
       </div>
 
       {/* Seção Aluguel Atual */}
@@ -322,25 +335,50 @@ export const ClientDetailPage: React.FC = () => {
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         title="Editar Dados do Cliente"
-        maxWidth="md"
+        maxWidth="xl"
       >
         <form onSubmit={handleUpdateClient} className="space-y-4 p-2">
           <Input
-            label="Nome completo"
+            label="Nome completo *"
+            placeholder="Ex: Carlos Silva"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
           />
-          <Input
-            label="WhatsApp / Telefone"
-            value={editWhatsapp}
-            onChange={(e) => setEditWhatsapp(e.target.value)}
-          />
-          <Input
-            label="E-mail"
-            type="email"
-            value={editEmail}
-            onChange={(e) => setEditEmail(e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="WhatsApp *"
+              placeholder="(67) 99999-9999"
+              value={editWhatsapp}
+              onChange={(e) => setEditWhatsapp(e.target.value)}
+            />
+            <Input
+              label="CPF / CNPJ"
+              placeholder="000.000.000-00"
+              value={editDocument}
+              onChange={(e) => setEditDocument(e.target.value)}
+            />
+          </div>
+          <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+            <Input
+              label="E-mail"
+              type="email"
+              placeholder="cliente@email.com"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Observações
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Anotações sobre a pessoa..."
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium"
+              />
+            </div>
+          </div>
 
           <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>

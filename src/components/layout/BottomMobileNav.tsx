@@ -88,7 +88,7 @@ export const BottomMobileNav: React.FC<BottomMobileNavProps> = ({
           type="button"
           className={clsx(
             'flex flex-col items-center gap-1 text-xs font-medium transition-colors py-1.5 px-3 rounded-xl min-w-[56px] min-h-[44px] justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200',
-            ['/imoveis', '/financeiro', '/configuracoes', '/contratos', '/cobrancas'].some((p) =>
+            ['/imoveis', '/financeiro', '/configuracoes', '/cobrancas'].some((p) =>
               isNavActive(p)
             ) && 'text-blue-600 dark:text-blue-400 font-semibold'
           )}
