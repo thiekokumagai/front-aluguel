@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
+import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
         <AuthProvider>
           <NotificationProvider>
             <BrowserRouter>
+              <Toaster position="top-right" richColors />
               <AppRoutes />
             </BrowserRouter>
           </NotificationProvider>

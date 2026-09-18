@@ -32,7 +32,7 @@ export const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true);
-      await login(data.email, data.remember);
+      await login(data.email, data.password, data.remember);
       toast.success('Login realizado com sucesso! Bem-vindo.');
       navigate('/dashboard');
     } catch (err) {
@@ -44,12 +44,12 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleQuickDemoLogin = async () => {
-    setValue('email', 'eduardo@gestaoalugueis.com.br');
-    setValue('password', 'password123');
+    setValue('email', 'superadmin@aluguel.com');
+    setValue('password', 'admin123');
     try {
       setIsLoading(true);
-      await login('eduardo@gestaoalugueis.com.br', true);
-      toast.success('Entrando como Eduardo (Conta Demo)...');
+      await login('superadmin@aluguel.com', 'admin123', true);
+      toast.success('Entrando como Superadmin...');
       navigate('/dashboard');
     } catch (err) {
       toast.error('Erro no login de demonstração');
