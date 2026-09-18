@@ -36,7 +36,8 @@ export const LoginPage: React.FC = () => {
       toast.success('Login realizado com sucesso! Bem-vindo.');
       navigate('/dashboard');
     } catch (err) {
-      toast.error('Erro ao realizar login');
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao realizar login';
+      toast.error(errorMessage === 'Invalid credentials' ? 'E-mail ou senha incorretos.' : errorMessage);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -52,7 +53,8 @@ export const LoginPage: React.FC = () => {
       toast.success('Entrando como Superadmin...');
       navigate('/dashboard');
     } catch (err) {
-      toast.error('Erro no login de demonstração');
+      const errorMessage = err instanceof Error ? err.message : 'Erro no login de demonstração';
+      toast.error(errorMessage === 'Invalid credentials' ? 'E-mail ou senha incorretos.' : errorMessage);
       console.error(err);
     } finally {
       setIsLoading(false);

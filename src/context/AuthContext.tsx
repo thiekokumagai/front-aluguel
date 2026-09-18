@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '../types';
-import { mockStorage } from '../mocks/storage';
 import { API_BASE_URL } from '../services/api';
 
 function parseJwt(token: string) {

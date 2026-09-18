@@ -5,7 +5,6 @@ import { AppTopbar } from './AppTopbar';
 import { BottomMobileNav } from './BottomMobileNav';
 import { NewRentalModal } from '../rentals/NewRentalModal';
 import { SendExtraChargeModal } from '../charges/SendExtraChargeModal';
-import { Toaster } from 'sonner';
 import { X, Home, CreditCard, Settings } from 'lucide-react';
 
 export const AppLayout: React.FC = () => {
@@ -22,8 +21,6 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16 lg:pb-0">
-      {/* Toast Notifications */}
-      <Toaster position="top-right" richColors />
 
       {/* Sidebar */}
       <AppSidebar
